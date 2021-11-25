@@ -5,7 +5,14 @@
 			{
 				"name": "Dimen Pipeline",
 				"type": "ExecutePipeline",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "PipeLineApi",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
@@ -30,6 +37,19 @@
 				"typeProperties": {
 					"pipeline": {
 						"referenceName": "Fact Pipeline",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "PipeLineApi",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PipeLineApi",
 						"type": "PipelineReference"
 					},
 					"waitOnCompletion": true
