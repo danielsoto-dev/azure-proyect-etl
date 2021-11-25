@@ -1,0 +1,98 @@
+{
+	"name": "Dimen Pipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "CreatingDimen",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "1.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "CreatingDimen",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "PrepareTable",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "CreatingDimen",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "alter table [db-danielsoto].[estado_tb]\nalter column surr_estado int not null;\n\nalter table [db-danielsoto].[depto_tb]\nalter column surr_depto int not null;\n\nalter table [db-danielsoto].[edad_tb]\nalter column surr_edad int not null;\nselect 0 id;",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "database_estado_tb",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "AsignPk",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "PrepareTable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "alter table [db-danielsoto].[estado_tb]\nADD PRIMARY KEY (surr_estado);\n\nalter table [db-danielsoto].[depto_tb]\nADD PRIMARY KEY (surr_depto);\n\nalter table [db-danielsoto].[edad_tb]\nADD PRIMARY KEY (surr_edad);\nselect 0 id;",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "database_edad_tb",
+						"type": "DatasetReference"
+					}
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2021-11-23T01:39:19Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

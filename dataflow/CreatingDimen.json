@@ -1,0 +1,86 @@
+{
+	"name": "CreatingDimen",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CSV_COVID",
+						"type": "DatasetReference"
+					},
+					"name": "mainFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "database_sink",
+						"type": "DatasetReference"
+					},
+					"name": "DeptoFiex"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "database_estado_tb",
+						"type": "DatasetReference"
+					},
+					"name": "SaveEstadoTb"
+				},
+				{
+					"dataset": {
+						"referenceName": "table_dpto_sch",
+						"type": "DatasetReference"
+					},
+					"name": "SaveDepto"
+				},
+				{
+					"dataset": {
+						"referenceName": "database_edad_tb",
+						"type": "DatasetReference"
+					},
+					"name": "SaveEdadTb"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Estado"
+				},
+				{
+					"name": "Dpto"
+				},
+				{
+					"name": "Unique"
+				},
+				{
+					"name": "FixingDept"
+				},
+				{
+					"name": "PickFixedDept"
+				},
+				{
+					"name": "SurrogateKey1"
+				},
+				{
+					"name": "UniqueDept"
+				},
+				{
+					"name": "SurrogateKeyDepto"
+				},
+				{
+					"name": "EdadEntero"
+				},
+				{
+					"name": "SurrogateKeyEdad"
+				},
+				{
+					"name": "UniqueEdad"
+				},
+				{
+					"name": "SelectEdad"
+				}
+			],
+			"script": "source(output(\n\t\t{ID de caso} as string,\n\t\t{Fecha de notificación} as string,\n\t\t{Codigo DIVIPOLA} as string,\n\t\t{Ciudad de ubicación} as string,\n\t\t{Departamento o Distrito } as string,\n\t\t{atención} as string,\n\t\tEdad as string,\n\t\tSexo as string,\n\t\tTipo as string,\n\t\tEstado as string,\n\t\t{País de procedencia} as string,\n\t\tFIS as string,\n\t\t{Fecha de muerte} as string,\n\t\t{Fecha diagnostico} as string,\n\t\t{Fecha recuperado} as string,\n\t\t{fecha reporte web} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> mainFile\nsource(output(\n\t\toriginal as string,\n\t\tfixeddepartment as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinferDriftedColumnTypes: true,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DeptoFiex\nmainFile select(mapColumn(\n\t\tEstado\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Estado\nmainFile select(mapColumn(\n\t\tDepartamento = {Departamento o Distrito }\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Dpto\nEstado aggregate(groupBy(Estado),\n\tunique = count()) ~> Unique\nDeptoFiex, Dpto join(original === Departamento,\n\tjoinType:'right',\n\tbroadcast: 'auto')~> FixingDept\nFixingDept select(mapColumn(\n\t\tDepartamento = fixeddepartment\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> PickFixedDept\nUnique keyGenerate(output(surr_estado as long),\n\tstartAt: 1L) ~> SurrogateKey1\nPickFixedDept aggregate(groupBy(Departamento),\n\tcuenta = count()) ~> UniqueDept\nUniqueDept keyGenerate(output(surr_depto as long),\n\tstartAt: 1L) ~> SurrogateKeyDepto\nSelectEdad derive(EdadInt = toInteger(Edad)) ~> EdadEntero\nUniqueEdad keyGenerate(output(surr_edad as long),\n\tstartAt: 1L) ~> SurrogateKeyEdad\nEdadEntero aggregate(groupBy(EdadInt),\n\tCount = count()) ~> UniqueEdad\nmainFile select(mapColumn(\n\t\tEdad\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectEdad\nSurrogateKey1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tEstado as string,\n\t\tsurr_estado as integer\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\trecreate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tEstado,\n\t\tsurr_estado\n\t)) ~> SaveEstadoTb\nSurrogateKeyDepto sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tDepartamento as string,\n\t\tsurr_depto as integer\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\trecreate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tDepartamento,\n\t\tsurr_depto\n\t)) ~> SaveDepto\nSurrogateKeyEdad sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tEdad as integer,\n\t\tsurr_edad as integer\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\trecreate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tEdad = EdadInt,\n\t\tsurr_edad\n\t)) ~> SaveEdadTb"
+		}
+	}
+}

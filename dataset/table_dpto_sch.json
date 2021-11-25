@@ -1,0 +1,27 @@
+{
+	"name": "table_dpto_sch",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "database_link",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Departamento",
+				"type": "nvarchar"
+			},
+			{
+				"name": "surr_depto",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "db-danielsoto",
+			"table": "depto_tb"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

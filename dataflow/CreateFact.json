@@ -1,0 +1,84 @@
+{
+	"name": "CreateFact",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CSV_COVID",
+						"type": "DatasetReference"
+					},
+					"name": "mainFile"
+				},
+				{
+					"dataset": {
+						"referenceName": "database_edad_tb",
+						"type": "DatasetReference"
+					},
+					"name": "TableEdad"
+				},
+				{
+					"dataset": {
+						"referenceName": "database_estado_tb",
+						"type": "DatasetReference"
+					},
+					"name": "TableEstado"
+				},
+				{
+					"dataset": {
+						"referenceName": "table_dpto_sch",
+						"type": "DatasetReference"
+					},
+					"name": "TableDepto"
+				},
+				{
+					"dataset": {
+						"referenceName": "database_sink",
+						"type": "DatasetReference"
+					},
+					"name": "FixedDepto"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "fact_tb",
+						"type": "DatasetReference"
+					},
+					"name": "SaveFactTable"
+				}
+			],
+			"transformations": [
+				{
+					"name": "ColumnsOfInterest"
+				},
+				{
+					"name": "JoinEdad"
+				},
+				{
+					"name": "RemovingExtraEdad"
+				},
+				{
+					"name": "JoinEstado"
+				},
+				{
+					"name": "RemovingExtraEstado"
+				},
+				{
+					"name": "JoinDepto"
+				},
+				{
+					"name": "RemovingExtraDepto"
+				},
+				{
+					"name": "FixedDeptos"
+				},
+				{
+					"name": "SelectAndChangeName"
+				}
+			],
+			"script": "source(output(\n\t\t{ID de caso} as string,\n\t\t{Fecha de notificación} as string,\n\t\t{Codigo DIVIPOLA} as string,\n\t\t{Ciudad de ubicación} as string,\n\t\t{Departamento o Distrito } as string,\n\t\t{atención} as string,\n\t\tEdad as string,\n\t\tSexo as string,\n\t\tTipo as string,\n\t\tEstado as string,\n\t\t{País de procedencia} as string,\n\t\tFIS as string,\n\t\t{Fecha de muerte} as string,\n\t\t{Fecha diagnostico} as string,\n\t\t{Fecha recuperado} as string,\n\t\t{fecha reporte web} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> mainFile\nsource(output(\n\t\tEdad as integer,\n\t\tsurr_edad as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> TableEdad\nsource(output(\n\t\tEstado as string,\n\t\tsurr_estado as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> TableEstado\nsource(output(\n\t\tDepartamento as string,\n\t\tsurr_depto as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> TableDepto\nsource(output(\n\t\toriginal as string,\n\t\tfixeddepartment as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> FixedDepto\nmainFile select(mapColumn(\n\t\tDepartamento = {Departamento o Distrito },\n\t\tEdad,\n\t\tEstado\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> ColumnsOfInterest\nColumnsOfInterest, TableEdad join(toInteger(ColumnsOfInterest@Edad) == TableEdad@Edad,\n\tjoinType:'cross',\n\tbroadcast: 'auto')~> JoinEdad\nJoinEdad select(mapColumn(\n\t\tDepartamento,\n\t\tEstado,\n\t\tsurr_edad\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemovingExtraEdad\nRemovingExtraEdad, TableEstado join(RemovingExtraEdad@Estado == TableEstado@Estado,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinEstado\nJoinEstado select(mapColumn(\n\t\tDepartamento,\n\t\tsurr_edad,\n\t\tsurr_estado\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemovingExtraEstado\nSelectAndChangeName, TableDepto join(SelectAndChangeName@Departamento == TableDepto@Departamento,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinDepto\nJoinDepto select(mapColumn(\n\t\tsurr_edad,\n\t\tsurr_estado,\n\t\tsurr_depto\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemovingExtraDepto\nRemovingExtraEstado, FixedDepto join(Departamento == original,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> FixedDeptos\nFixedDeptos select(mapColumn(\n\t\tsurr_edad,\n\t\tsurr_estado,\n\t\tDepartamento = fixeddepartment\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectAndChangeName\nRemovingExtraDepto sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\trecreate:true,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SaveFactTable"
+		}
+	}
+}

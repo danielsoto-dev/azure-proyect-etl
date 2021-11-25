@@ -1,0 +1,89 @@
+{
+	"name": "CSV_COVID",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "link_toblob",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "Casos_positivos_de_COVID-19_en_Colombia_MAY_13.csv",
+				"container": "data"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "ID de caso",
+				"type": "String"
+			},
+			{
+				"name": "Fecha de notificación",
+				"type": "String"
+			},
+			{
+				"name": "Codigo DIVIPOLA",
+				"type": "String"
+			},
+			{
+				"name": "Ciudad de ubicación",
+				"type": "String"
+			},
+			{
+				"name": "Departamento o Distrito ",
+				"type": "String"
+			},
+			{
+				"name": "atención",
+				"type": "String"
+			},
+			{
+				"name": "Edad",
+				"type": "String"
+			},
+			{
+				"name": "Sexo",
+				"type": "String"
+			},
+			{
+				"name": "Tipo",
+				"type": "String"
+			},
+			{
+				"name": "Estado",
+				"type": "String"
+			},
+			{
+				"name": "País de procedencia",
+				"type": "String"
+			},
+			{
+				"name": "FIS",
+				"type": "String"
+			},
+			{
+				"name": "Fecha de muerte",
+				"type": "String"
+			},
+			{
+				"name": "Fecha diagnostico",
+				"type": "String"
+			},
+			{
+				"name": "Fecha recuperado",
+				"type": "String"
+			},
+			{
+				"name": "fecha reporte web",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,35 @@
+{
+	"name": "Flujo API",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CSV_COVID",
+						"type": "DatasetReference"
+					},
+					"name": "CSVAPI"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "apioutput",
+						"type": "DatasetReference"
+					},
+					"name": "csvonlydept"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Select1"
+				},
+				{
+					"name": "Unique"
+				}
+			],
+			"script": "source(output(\n\t\t{ID de caso} as string,\n\t\t{Fecha de notificación} as string,\n\t\t{Codigo DIVIPOLA} as string,\n\t\t{Ciudad de ubicación} as string,\n\t\t{Departamento o Distrito } as string,\n\t\t{atención} as string,\n\t\tEdad as string,\n\t\tSexo as string,\n\t\tTipo as string,\n\t\tEstado as string,\n\t\t{País de procedencia} as string,\n\t\tFIS as string,\n\t\t{Fecha de muerte} as string,\n\t\t{Fecha diagnostico} as string,\n\t\t{Fecha recuperado} as string,\n\t\t{fecha reporte web} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> CSVAPI\nUnique select(mapColumn(\n\t\tDepartamento = {Departamento o Distrito }\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select1\nCSVAPI aggregate(groupBy({Departamento o Distrito }),\n\tsadasda = count()) ~> Unique\nSelect1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\t{ID de caso} as string,\n\t\t{Fecha de notificación} as string,\n\t\t{Codigo DIVIPOLA} as string,\n\t\t{Ciudad de ubicación} as string,\n\t\t{Departamento o Distrito } as string,\n\t\t{atención} as string,\n\t\tEdad as string,\n\t\tSexo as string,\n\t\tTipo as string,\n\t\tEstado as string,\n\t\t{País de procedencia} as string,\n\t\tFIS as string,\n\t\t{Fecha de muerte} as string,\n\t\t{Fecha diagnostico} as string,\n\t\t{Fecha recuperado} as string,\n\t\t{fecha reporte web} as string\n\t),\n\tpartitionFileNames:['singlecolumncovid.csv'],\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> csvonlydept"
+		}
+	}
+}

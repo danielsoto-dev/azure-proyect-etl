@@ -1,0 +1,9 @@
+{
+	"name": "etlsoftware",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "23ee3fdd-a279-4515-9f55-c8dba2f6b91b",
+		"tenantId": "bab0b679-bd5f-4fe8-b516-c6b8b317c782"
+	}
+}

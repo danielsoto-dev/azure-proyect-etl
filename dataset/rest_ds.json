@@ -1,0 +1,24 @@
+{
+	"name": "rest_ds",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "link_api_service",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Departamento": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "RestResource",
+		"typeProperties": {
+			"relativeUrl": {
+				"value": "@concat('https://software-design-ds.herokuapp.com/api/departments/', dataset().Departamento)",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
